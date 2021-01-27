@@ -18,4 +18,3 @@ class FacebookUserCredentials:
         self.page_name=str()
 
 
-

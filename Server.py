@@ -83,3 +83,69 @@ class FacebookDB:
             bio, currentcityname, hometownname, relationshipstatus)
         self.server_hd.execute(
             "update users {0} where email='{1}'".format(sql_string, username))
+
+
+    def get_user_info(self,*args,**kwargs):
+        args=[str(e) for e in args]
+        columns=" , ".join(args)
+        conditions=str()
+        for k,v in kwargs.items():
+            if k.lower()=="userid":
+                conditions+=(k+"="+str(v)+" ")
+            else:
+                conditions+=(k+"='"+str(v)+"' ")
+
+        conditions=" and ".join(conditions.split())
+        conditions=conditions.replace("username","email")
+
+        self.server_hd.execute("select {0} from users where {1}".format(columns,conditions))
+        query_result=self.server_hd.fetchall()
+
+        if len(query_result)!=0:
+            return query_result[0]
+
+        return None
+
+    def get_page_info(self,*args,**kwargs):
+        args=[str(e) for e in args]
+        columns=" , ".join(args)
+        conditions=str()
+        for k,v in kwargs.items():
+            if k.lower() in "pageid userid":
+                conditions+=(k+"="+str(v)+" ")
+            else:
+                conditions+=(k+"='"+str(v)+"' ")
+
+        conditions=" and ".join(conditions.split())
+
+
+        self.server_hd.execute("select {0} from pages where {1}".format(columns,conditions))
+        query_result=self.server_hd.fetchall()
+
+        if len(query_result)!=0:
+            return query_result[0]
+
+        return None
+
+
+
+    def create_new_page(self,username,page_name=None,category=None):
+
+        userid,firstname,lastname=self.get_user_info("userid","firstname","lastname",username=username)
+
+        if page_name is None:
+            page_name=firstname+"-"+lastname
+
+        if category is None:
+            category="Regular"
+
+
+        self.server_hd.execute("select top 1 PageID from pages order by PageID desc ")
+        query_result=self.server_hd.fetchall()
+        page_id=0
+        if len(query_result) != 0:
+            page_id=query_result[0][0]
+            page_id+=2
+
+        sql_string="{0},{1},'{2}','{3}','{4}',{5},'{6}','{7}'".format(page_id,userid,page_name,category,'NULL','0','NULL',str(datetime.now()))
+        status=self.server_hd.execute("insert into pages values({0})".format(sql_string))

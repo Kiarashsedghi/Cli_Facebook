@@ -1,6 +1,7 @@
 from Server import *
 from lib import *
 import re
+from time import sleep
 from datetime import datetime
 
 from getpass import getpass
@@ -36,7 +37,7 @@ class FacebookCli:
         # Create Facebook database handler
         # TODO‌ reading from a file / more secure than below
         self.dbhandler = FacebookDB(
-            "127.0.0.1", "Facebook", "SA", "@1378Alisajad")
+            "192.168.200.6", "Facebook", "sa", "abracadabra")
         if self.dbhandler.connect() is None:
             self.printe("Cannot connect to database... ")
             exit(5)
@@ -122,6 +123,26 @@ class FacebookCli:
             elif(re.match(self.cmdrgx_obj.no_ans, self.usercmd)):
                 break
 
+        print("Creating page for you ...")
+        sleep(2)
+        self.dbhandler.create_new_page(username)
+        self.usercred_obj=FacebookUserCredentials(username, password)
+        print("Your page is ready")
+
+    def show_homepage(self):
+        userid,=self.dbhandler.get_user_info("userid",username=self.usercred_obj.username)
+        pagename,=self.dbhandler.get_page_info("pagename",userid=userid)
+
+        while (True):
+            self.usercmd = input("{0}> ".format(pagename))
+
+            if re.match(self.cmdrgx_obj.exit, self.usercmd) is not None:
+                print("exit from account!")
+                return
+
+
+
+
     def prompt(self):
         '''
         This function gives the cli prompt to the user
@@ -137,19 +158,17 @@ class FacebookCli:
             self.usercmd = input("> ")
 
             if re.match(self.cmdrgx_obj.login, self.usercmd) is not None:
-                # login_object = self.login()
-                if True:
-                    print("Welcome {0}".format(login_object.username))
-
-
-
-
+                self.usercred_obj = self.login()
+                if self.usercred_obj:
+                    print("Welcome {0}".format(self.usercred_obj.username))
+                    self.show_homepage()
                 else:
                     print("username or password is incorrect :(")
 
             # Create new user
             elif re.match(self.cmdrgx_obj.signup, self.usercmd) is not None:
                 self.signup()
+                self.show_homepage()
 
             elif re.match(self.cmdrgx_obj.exit, self.usercmd) is not None:
                 print("Bye! See you later")
