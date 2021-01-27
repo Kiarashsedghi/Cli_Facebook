@@ -18,6 +18,4 @@ class FacebookUserCredentials:
         self.page_name=str()
 
 
-from datetime import datetime
-print(str(datetime.now()))
 
