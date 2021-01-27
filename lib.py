@@ -17,9 +17,7 @@ class FacebookUserCredentials:
         self.password=password
         self.page_name=str()
 
-a={'1':'2'}
-if '1' in a.keys():
-    print("ues")
 
-
+from datetime import datetime
+print(str(datetime.now()))
 

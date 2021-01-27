@@ -57,7 +57,7 @@ class FacebookDB:
         birthdate = user_info['birthdate']
 
         sql_string = "'{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}','{9}','{10}','{11}'".format(firstname, lastname, birthdate, gender, phonenumber, password,
-                                                                                                        username, '1111111', 'NULL', 'NULL', 'NULL', 'NULL')
+                                                                                                        username, str(datetime.now()), 'NULL', 'NULL', 'NULL', 'NULL')
 
         self.server_hd.execute(
             "insert into users values({0})".format(sql_string))
