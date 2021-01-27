@@ -111,10 +111,11 @@ class FacebookCli:
             self.usercmd = input("Continue upgrading account?[yes/no]: ")
             if(re.match(self.cmdrgx_obj.yes_ans, self.usercmd)):
 
-                bio = input("bio: ")
-                current_city = input("current_city: ")
-                hometown = input("hometown: ")
-                relationship_status = input("relationship[married/single]: ")
+                bio = input("bio: ").strip()
+                current_city = input("current_city: ").strip()
+                hometown = input("hometown: ").strip()
+                relationship_status = input("relationship[married/single]: ").strip()
+
                 self.dbhandler.update_user_by_username(
                     username, bio=bio, currentcityname=current_city, hometownname=hometown, relationshipstatus=relationship_status)
                 break
@@ -136,9 +137,13 @@ class FacebookCli:
             self.usercmd = input("> ")
 
             if re.match(self.cmdrgx_obj.login, self.usercmd) is not None:
-                login_object = self.login()
-                if login_object:
+                # login_object = self.login()
+                if True:
                     print("Welcome {0}".format(login_object.username))
+
+
+
+
                 else:
                     print("username or password is incorrect :(")
 

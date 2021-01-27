@@ -63,7 +63,14 @@ class FacebookDB:
 
 
     def update_user_by_username(self,username,**user_info):
-        print(username,user_info)
+        bio=user_info['bio'] if len(user_info['bio'])!=0 else 'NULL'
+        currentcityname=user_info['currentcityname'] if len(user_info['currentcityname'])!=0 else 'NULL'
+        hometownname=user_info['hometownname'] if len(user_info['hometownname'])!=0 else 'NULL'
+        relationshipstatus=user_info['relationshipstatus'] if len(user_info['relationshipstatus'])!=0 else 'NULL'
+
+        sql_string="set bio='{0}',currentcityname='{1}',hometownname='{2}',relationshipstatus='{3}'"
+        self.server_hd.execute("update users {0} where email='{1}'".format(sql_string,username))
+
 
 
 
