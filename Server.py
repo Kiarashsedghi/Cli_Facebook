@@ -18,8 +18,16 @@ class FacebookDB:
         This function connects to database and returns an handler to work with the database
         :return: database handler
         '''
-        self.server_hd = (pymssql.connect(**self.server_properties)).cursor()
+        conn = pymssql.connect(**self.server_properties)
+        conn.autocommit(True)
+        self.server_hd= conn.cursor()
         return self.server_hd
+
+        # conn = pymssql.connect(server='localhost', port='1433',
+        #                        user='SA', password='@1378Alisajad', database='my')
+        # conn.autocommit(True)
+        # cursor = conn.cursor()
+        # self.server_db_handler = curso
 
     def authenticate_user(self, username, password):
         '''
@@ -72,6 +80,6 @@ class FacebookDB:
             user_info['relationshipstatus']) != 0 else 'NULL'
 
         sql_string = "set bio='{0}',currentcityname='{1}',hometownname='{2}',relationshipstatus='{3}'".format(
-            bio, currentcityname,hometownname,relationshipstatus)
+            bio, currentcityname, hometownname, relationshipstatus)
         self.server_hd.execute(
             "update users {0} where email='{1}'".format(sql_string, username))
