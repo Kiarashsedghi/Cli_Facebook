@@ -43,7 +43,7 @@ class FacebookCli:
         self.dbhandler = FacebookDB(
             "192.168.200.6", "Facebook", "SA", "abracadabra")
         if self.dbhandler.connect() is None:
-            self.printe("Cannot connect to database... ")
+            print("Cannot connect to database... ")
             exit(5)
         else:
             # Create cli command regex object
@@ -82,13 +82,13 @@ class FacebookCli:
         while (1):
             username = (input("username: ")).strip()
             if self.dbhandler.is_username_taken(username):
-                self.printe(
+                print(
                     "username {0} has been already taken".format(username))
                 continue
             elif len(username) == 0:
                 continue
             elif not (re.match(self.cmdrgx_obj.email, username)):
-                self.printe("Not a valid email address entered")
+                print("Not a valid email address entered")
                 continue
             break
 
@@ -248,7 +248,7 @@ class FacebookCli:
                                 print('❌ Post like failed ')
                             break
                 else:
-                    self.printe('No Post Exists.')
+                    print('No Post Exists.')
 
             elif re.match(self.cmdrgx_obj.dislike, self.usercmd) is not None:
                 page_posts = self.dbhandler.get_posts_by_page_id(
@@ -274,7 +274,7 @@ class FacebookCli:
                                 print('❌ Post dislike failed ')
                             break
                 else:
-                    self.printe('No Post Exists.')
+                    print('No Post Exists.')
 
             elif re.match(self.cmdrgx_obj.comment, self.usercmd) is not None:
                 page_posts = self.dbhandler.get_posts_by_page_id(
@@ -319,7 +319,7 @@ class FacebookCli:
                                 print('❌ Add Comment Failed ')
                             break
                 else:
-                    self.printe('No Post Exists.')
+                    print('No Post Exists.')
 
             elif re.match(self.cmdrgx_obj.visitpage, self.usercmd) is not None:
                 pagename = (self.usercmd).split()[1]
@@ -432,6 +432,32 @@ class FacebookCli:
             else:
                 print("not a valid command")
 
+                if len(all_wanted_groups)==0:
+                    print("You Are Not Member Of Group {0} Anymore".format(grp_name))
+
+                elif len(all_wanted_groups)>1:
+                    for i in range(len(all_wanted_groups)):
+                        print('{0}.\t{1}\t{2}\n'.format(
+                            i + 1, all_wanted_groups[i][0], '😎' if all_wanted_groups[i][1] == userid else ''))
+                    while True:
+                        self.user_ans = re.sub("\s*", "", input("Which Group Do You Want To Enter? "))
+                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(all_wanted_groups) + 1)):
+                            groupctx=all_wanted_groups[int(self.user_ans)-1][2]
+                            self.show_groupctx(groupctx,grp_name,userid)
+                            break
+                else:
+                    groupctx = all_wanted_groups[0][2]
+                    self.show_groupctx(groupctx, grp_name,userid)
+
+
+
+
+
+            elif re.match(self.cmdrgx_obj.empty_cmd,self.usercmd) is not None:
+                continue
+            else:
+                print("not a valid command")
+
 
     def prompt(self):
         '''
@@ -464,9 +490,7 @@ class FacebookCli:
                 print("Bye! See you later")
                 exit(0)
 
-    def printe(self, message):
-        # TODO‌ color
-        print(message)
+
 
 
 client_obj = FacebookCli()
