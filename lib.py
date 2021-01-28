@@ -17,6 +17,11 @@ class FacebookCliRegexes:
         self.like="^\s*like\s*$"
         self.dislike="^\s*dislike\s*$"
         self.comment="^\s*comment\s*$"
+        self.create_group="^\s*newgrp*\s*$"
+        self.show_group="^\s*showgrp*\s*$"
+        self.add_member="^\s*addmem*\s*$"
+
+
 
 
 class FacebookUserCredentials:

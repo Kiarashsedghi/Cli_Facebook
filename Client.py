@@ -292,6 +292,56 @@ class FacebookCli:
             elif re.match(self.cmdrgx_obj.loadhomepage, self.usercmd) is not None:
                 self.pagectx = self.homepagectx
 
+            elif re.match(self.cmdrgx_obj.create_group, self.usercmd) is not None:
+                grp_name = str()
+                grp_description = str()
+
+                while(len(grp_name) == 0):
+                    grp_name = input('👨‍👩‍👦‍👦 Enter Your Group Name: ').strip()
+
+                grp_description = input(
+                    '🗒 Enter Your Group Description: ').strip()
+                print('Creating Your Group For The First Time ...')
+                sleep(1)
+                if (self.dbhandler.create_new_group(userid, grp_name, grp_description)):
+                    print('✅ Your Group Created Successfully')
+                else:
+                    print('❌ Group Creation Failed')
+
+            elif re.match(self.cmdrgx_obj.show_group, self.usercmd) is not None:
+                groups = self.dbhandler.get_groups_of_user(userid)
+                if len(groups):
+                    for i in range(len(groups)):
+                        print('{0}.\t{1}\t{2}\n'.format(
+                            i + 1, groups[i][0], '😎' if groups[i][1] == userid else ''))
+                else:
+                    print('No Groups Yet')
+            elif re.match(self.cmdrgx_obj.add_member, self.usercmd) is not None:
+                groups = self.dbhandler.get_groups_of_user(userid)
+                if len(groups):
+                    for i in range(len(groups)):
+                        print('{0}.\t{1}\t{2}\n'.format(
+                            i + 1, groups[i][0], '😎' if groups[i][1] == userid else ''))
+                    while True:
+                        self.user_ans = re.sub(
+                            "\s*", "", input("📃 Which Group Do You Want To Add Member To? "))
+                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(groups)+1)):
+                            username = str()
+                            while(len(username) == 0):
+                                username = input('🥸 Enter Username: ').strip()
+                            username_id = self.dbhandler.get_user_info(
+                                'userid', username=username)[0]
+                            print('Adding User To Group ...')
+                            sleep(1)
+                            if (self.dbhandler.add_member_to_group(groups[int(self.user_ans)-1][2], username_id)):
+                                print('✅ User Added To Group Successfully')
+                            else:
+                                print('❌ User Addition Failed')
+                            break
+
+                else:
+                    print('No Groups Yet')
+
     def prompt(self):
         '''
         This function gives the cli prompt to the user

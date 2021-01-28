@@ -243,3 +243,64 @@ class FacebookDB:
         status = self.server_hd.execute(
             "insert into pages values({0})".format(sql_string))
 
+    def create_new_group(self, adminid, groupname, group_description):
+        self.server_hd.execute(
+            "select top 1 GroupID from Groups order by GroupID desc ")
+        query_result = self.server_hd.fetchall()
+        group_id = 1
+        if len(query_result) != 0:
+            group_id = query_result[0][0]
+            group_id += 2
+        now_date = str(datetime.now())
+        sql_string_group = "{0},{1},'{2}','{3}','{4}'".format(
+            group_id, adminid, groupname, group_description, now_date)
+        try:
+            self.server_hd.execute(
+                "insert into groups values({0})".format(sql_string_group))
+            if(self.add_member_to_group(group_id, adminid, now_date)):
+                return 1
+            return 0
+        except:
+            return 0
+
+    def add_member_to_group(self, groupid, userid, nowdate=None):
+        sql_string_get_members = 'groupid={0} and userid={1}'.format(groupid,userid)
+        self.server_hd.execute(
+                "select * from  groupmembers where ({0})".format(sql_string_get_members))
+        query_result = self.server_hd.fetchall()
+        if (len(query_result)):
+            return 0
+        now_date = str(datetime.now()) if nowdate is None else nowdate
+        sql_string = "{0},{1},'{2}'".format(
+            groupid, userid, now_date)
+        try:
+            self.server_hd.execute(
+                "insert into groupmembers values({0})".format(sql_string))
+            return 1
+        except:
+            return 0
+
+    def get_groups_info(self, *args, ** kwargs):
+        args = [str(e) for e in args]
+        columns = " , ".join(args)
+        conditions = str()
+        for k, v in kwargs.items():
+            if k.lower() in "groupid admin":
+                conditions += (k + "=" + str(v) + " ")
+            else:
+                conditions += (k + "='" + str(v) + "' ")
+
+        conditions = " and ".join(conditions.split())
+
+        self.server_hd.execute(
+            "select {0} from groups where {1}".format(columns, conditions))
+        query_result = self.server_hd.fetchall()
+
+        return query_result
+
+    def get_groups_of_user(self, userid):
+        self.server_hd.execute(
+            "select g.GroupName,g.Admin,g.groupID from GroupMembers gm inner join groups g on gm.GroupID=g.GroupID where gm.UserID={0}".
+            format(userid))
+        query_result = self.server_hd.fetchall()
+        return query_result
