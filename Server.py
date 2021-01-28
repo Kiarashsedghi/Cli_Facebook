@@ -336,9 +336,9 @@ class FacebookDB:
         '''
 
         :param groupid:
-        :return: (t.Email,p.Text,p.DateTime)
+        :return: (t.Email,p.Text,p.DateTime ,p.postid)
         '''
-        self.server_hd.execute("select t.Email,p.Text,p.DateTime from (select u.UserID,u.Email from GroupMembers gm inner join Users u on gm.UserID=u.UserID where gm.GroupID={0}) t inner join Posts p on t.UserID=p.UserID".format(groupid))
+        self.server_hd.execute("select t.Email,p.Text,p.DateTime,p.postid from (select u.UserID,u.Email from GroupMembers gm inner join Users u on gm.UserID=u.UserID where gm.GroupID={0}) t inner join Posts p on t.UserID=p.UserID".format(groupid))
 
         return self.server_hd.fetchall()
 
