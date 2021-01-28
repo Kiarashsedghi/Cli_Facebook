@@ -16,6 +16,10 @@ class FacebookCli:
         self.usercmd = None
         self.cmdrgx_obj = None
 
+        self.pagectx=int()
+        self.homepagectx=int()
+        self.user_ans=str()
+
     def get_userpass(self):
         '''
         Prompting and asks users for their username and password
@@ -131,7 +135,56 @@ class FacebookCli:
 
     def show_homepage(self):
         userid,=self.dbhandler.get_user_info("userid",username=self.usercred_obj.username)
-        pagename,=self.dbhandler.get_page_info("pagename",userid=userid)
+        page_info=(self.dbhandler.get_page_info("pagename","pageid",userid=userid))
+        pagename,self.homepagectx=page_info[0]
+        self.pagectx=self.homepagectx
+
+        while (True):
+            self.usercmd = input("{0}> ".format(pagename))
+
+            if re.match(self.cmdrgx_obj.exit, self.usercmd) is not None:
+                print("exit from account!")
+                return
+
+            elif re.match(self.cmdrgx_obj.post,self.usercmd) is not None:
+                post_text=str()
+                temp=str()
+                while len(temp)==0 or temp!=".":
+                    temp=(input()).strip()
+                    post_text+=temp+"\n"
+
+                print("creating post...")
+                self.dbhandler.create_new_post(userid,post_text.strip(),pagename,"Page")
+                sleep(1)
+                print("post sent")
+
+            elif re.match(self.cmdrgx_obj.showpage, self.usercmd) is not None:
+
+                page_contents=self.dbhandler.get_page_info("*",pageid=self.pagectx)
+                page_posts=self.dbhandler.get_posts_by_page_id("*",destination=self.pagectx)
+                print(page_contents,page_posts)
+
+
+            elif re.match(self.cmdrgx_obj.visitpage, self.usercmd) is not None:
+                pagename=(self.usercmd).split()[1]
+                query_result=self.dbhandler.get_page_info("pageid",pagename=pagename)
+                if len(query_result)==0:
+                    print("Page {0} does not exist anymore".format(pagename))
+                elif len(query_result)==1:
+                    self.pagectx=query_result[0][0]
+                else:
+                    print("which page do you want to visit?")
+                    for i in range(len(query_result)):
+                        print("{0}-{1} {2}".format(i+1,pagename,query_result[i][0]))
+
+                    while True:
+                        self.user_ans=re.sub("\s*","",input("?? "))
+                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1,len(query_result)+1)):
+                            self.pagectx=query_result[int(self.user_ans)-1][0]
+                            break
+
+            elif re.match(self.cmdrgx_obj.loadhomepage, self.usercmd) is not None:
+                self.pagectx=self.homepagectx
 
         while (True):
             self.usercmd = input("{0}> ".format(pagename))

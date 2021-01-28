@@ -122,12 +122,37 @@ class FacebookDB:
         self.server_hd.execute("select {0} from pages where {1}".format(columns,conditions))
         query_result=self.server_hd.fetchall()
 
-        if len(query_result)!=0:
-            return query_result[0]
 
-        return None
+        return query_result
+
+    def create_new_post(self,uid,text,pagename,type):
+        if type=="Page":
+
+            query_result=self.get_page_info("pageid",pagename=pagename)
+            #TODO
+
+            page_id=query_result[0]
 
 
+            sql_string="{0},'{1}','{2}',{3}".format(uid,text,str(datetime.now()),page_id)
+            self.server_hd.execute("insert into posts values({0})".format(sql_string))
+
+    def get_posts_by_page_id(self,*args,**kwargs):
+        args = [str(e) for e in args]
+        columns = " , ".join(args)
+        conditions = str()
+        for k, v in kwargs.items():
+            if k.lower() in "postid userid destination":
+                conditions += (k + "=" + str(v) + " ")
+            else:
+                conditions += (k + "='" + str(v) + "' ")
+
+        conditions = " and ".join(conditions.split())
+
+        self.server_hd.execute("select {0} from posts where {1}".format(columns, conditions))
+        query_result = self.server_hd.fetchall()
+
+        return query_result
 
     def create_new_page(self,username,page_name=None,category=None):
 
