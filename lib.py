@@ -4,7 +4,7 @@ class FacebookCliRegexes:
     def __init__(self):
         self.login='^\s*login\s*$'
         self.signup="^\s*signup\s*$"
-        self.exit="^\s*(exit|bye)\s*$"
+        self.exit="^\s*(exit|quit)\s*$"
         self.yes_ans="^\s*y(e(s)?)?\s*$"
         self.no_ans="^\s*n(o)?\s*$"
         self.email="^\s*\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}\s*$"
@@ -14,6 +14,17 @@ class FacebookCliRegexes:
         self.showpage="^\s*explode\s*$"
         self.visitpage="^\s*visit\s+[a-zA-Z-]+\s*$"
         self.loadhomepage="^\s*home\s*$"
+        self.like="^\s*like\s*$"
+        self.dislike="^\s*dislike\s*$"
+        self.comment="^\s*comment\s*$"
+        self.create_group="^\s*newgrp*\s*$"
+        self.show_group="^\s*showgrp*\s*$"
+        self.add_member="^\s*addmem*\s*$"
+        self.enter_group="^\s*enter\s+[a-zA-Z-]+\s*$"
+        self.empty_cmd="^\s*$"
+        self.show_members="^\s*showmem*\s*$"
+        self.show_group_posts="^\s*showpost*\s*$"
+
 
 
 class FacebookUserCredentials:
@@ -21,5 +32,6 @@ class FacebookUserCredentials:
         self.username=username
         self.password=password
         self.page_name=str()
+
 
 
