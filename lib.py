@@ -24,7 +24,7 @@ class FacebookCliRegexes:
         self.empty_cmd="^\s*$"
         self.show_members="^\s*showmem*\s*$"
         self.show_group_posts="^\s*showpost*\s*$"
-
+        self.show_comments_of_post="^\s*showcmt*\s*"
 
 
 class FacebookUserCredentials:

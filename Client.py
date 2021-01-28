@@ -127,6 +127,17 @@ class FacebookCli:
         self.usercred_obj = FacebookUserCredentials(username, password)
         print("Your page is ready")
 
+    def print_group_posts(self, index ,post,liked_count,comment_count):
+
+        print('-------------------------')
+        print("{0}. By {1} On {2}".format(index + 1, post[0], post[2]))
+        print("liked by {0} users".format(liked_count))
+        print("{0} comments".format(comment_count))
+        print("Content\n")
+        print(post[1])
+
+
+
     def show_groupctx(self,groupid,grp_name,userid):
 
 
@@ -172,18 +183,103 @@ class FacebookCli:
 
                 else:
                     for i in range(len(posts)):
-                        print('-------------------------')
-                        print("{0}. By {1} On {2}".format(i+1,posts[i][0],posts[i][2]))
-                        print("-------------------------")
-                        print(posts[i][1])
+                        post_like_count = (self.dbhandler.get_post_likes("count(*)", postid=posts[i][3]))[0][0]
+                        post_comment_count = (self.dbhandler.get_post_comments("count(*)", postid=posts[i][3]))[0][0]
+                        self.print_group_posts(i,posts[i],post_like_count,post_comment_count)
+
+            elif re.match(self.cmdrgx_obj.like, self.usercmd) is not None:
+                posts = self.dbhandler.get_posts_of_group(groupid)
+
+                if len(posts):
+                    for i in range(len(posts)):
+                        post_like_count = (self.dbhandler.get_post_likes("count(*)", postid=posts[i][3]))[0][0]
+                        post_comment_count = (self.dbhandler.get_post_comments("count(*)", postid=posts[i][3]))[0][0]
+                        self.print_group_posts(i, posts[i], post_like_count, post_comment_count)
+
+                    while True:
+                            self.user_ans = re.sub(
+                                "\s*", "", input("👍 Which Post Do You Like? "))
+                            if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(posts)+1)):
+                                postid = posts[int(self.user_ans)-1][3]
+                                if self.dbhandler.like_post(postid, userid):
+                                    print("✅ Post Liked")
+                                else:
+                                    print('❌ Post like failed ')
+                                break
+                else:
+                    print('No Post Exists.')
+
+            elif re.match(self.cmdrgx_obj.comment, self.usercmd) is not None:
+                posts = self.dbhandler.get_posts_of_group(groupid)
+
+                if len(posts):
+                    for i in range(len(posts)):
+                        post_like_count = (self.dbhandler.get_post_likes("count(*)", postid=posts[i][3]))[0][0]
+                        post_comment_count = (self.dbhandler.get_post_comments("count(*)", postid=posts[i][3]))[0][0]
+                        self.print_group_posts(i, posts[i], post_like_count, post_comment_count)
+
+                    while True:
+                        self.user_ans = re.sub("\s*", "", input("📃 Which Post Do You Want To Comment? "))
+
+                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(posts) + 1)):
+                            postid = posts[int(self.user_ans) - 1][3]
 
 
-            elif re.match(self.cmdrgx_obj.empty_cmd, self.usercmd) is not None:
+                            comment_text = str()
+                            temp = str()
+                            print('Enter Your Comment:')
+                            while len(temp) == 0 or temp != ".":
+                                temp = (input()).strip()
+                                comment_text += temp + "\n"
+
+                            comment_text=comment_text.strip()[:-1]
+
+                            print('Creating Comment ...')
+                            sleep(1)
+                            if self.dbhandler.comment_post(postid, userid, comment_text):
+                                print("✅ Comment Added ")
+                            else:
+                                print('❌ Add Comment Failed ')
+                            break
+
+
+                else:
+                    print('No Post Exists.')
+
+
+            elif re.match(self.cmdrgx_obj.show_comments_of_post, self.usercmd) is not None:
+                posts = self.dbhandler.get_posts_of_group(groupid)
+
+                if len(posts):
+                    self.user_ans = re.sub("\s*", "", input("📃 Which Post Do You Want To See Comments? "))
+
+                    if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(posts) + 1)):
+                        postid = posts[int(self.user_ans) - 1][3]
+
+                        self.show_comments_of_post(postid)
+
+                else:
+                    print('No Post Exists.')
+
+
+            elif re.match(self.cmdrgx_obj.empty_cmd,self.usercmd) is not None:
                 continue
+
 
             else:
                 print("not a valid command")
 
+
+    def show_comments_of_post(self,postid):
+        comments = self.dbhandler.get_post_comments(
+            'text', 'datetime', postid=postid)
+        if len(comments):
+            for i in range(len(comments)):
+                print(
+                    '{0}) -----------{1}-----------'.format(i + 1, comments[i][1]))
+                print(comments[i][0] + '\n')
+        else:
+            print('No Comment')
 
 
     def show_homepage(self):
@@ -283,28 +379,15 @@ class FacebookCli:
                     for i in range(len(page_posts)):
                         print('{0}) -----------{1}-----------'.format(i +
                                                                       1, page_posts[i][3]))
-                        post_comment_count = (self.dbhandler.get_post_comments(
-                            "count(*)", postid=page_posts[i][0]))[0][0]
-                        print("📃 {0} comments.\n".format(
-                            post_comment_count))
+                        post_comment_count = (self.dbhandler.get_post_comments("count(*)", postid=page_posts[i][0]))[0][0]
+                        print("📃 {0} comments.\n".format(post_comment_count))
                         print(page_posts[i][2]+'\n')
-                        ##Todo : comments
                     while True:
-                        self.user_ans = re.sub(
-                            "\s*", "", input("📃 Which Post Do You Want To Comment? "))
+                        self.user_ans = re.sub("\s*", "", input("📃 Which Post Do You Want To Comment? "))
 
                         if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(page_posts)+1)):
-                            postid = page_posts[int(
-                                self.user_ans)-1][0]
-                            comments = self.dbhandler.get_post_comments(
-                                'text', 'datetime', postid=postid)
-                            if len(comments):
-                                for i in range(len(comments)):
-                                    print(
-                                        '{0}) -----------{1}-----------'.format(i+1, comments[i][1]))
-                                    print(comments[i][0]+'\n')
-                            else:
-                                print('No Comment')
+                            postid = page_posts[int(self.user_ans)-1][0]
+
                             comment_text = str()
                             temp = str()
                             print('Enter Your Comment:')
