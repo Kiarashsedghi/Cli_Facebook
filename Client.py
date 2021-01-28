@@ -41,7 +41,7 @@ class FacebookCli:
         # Create Facebook database handler
         # TODO‌ reading from a file / more secure than below
         self.dbhandler = FacebookDB(
-            "127.0.0.1", "Facebook", "SA", "@1378Alisajad")
+            "192.168.200.6", "Facebook", "SA", "abracadabra")
         if self.dbhandler.connect() is None:
             self.printe("Cannot connect to database... ")
             exit(5)
@@ -67,13 +67,6 @@ class FacebookCli:
         :return:
         '''
 
-        # name = "kiarash"
-        # lastname = "s"
-        # password = "123"
-        # gender = "male"
-        # dateofbirth="11-11-1111"
-        # phonenumber="123213123"
-        # username="kia"
         name = str()
         lastname = str()
         password = str()
@@ -134,6 +127,65 @@ class FacebookCli:
         self.usercred_obj = FacebookUserCredentials(username, password)
         print("Your page is ready")
 
+    def show_groupctx(self,groupid,grp_name,userid):
+
+
+        while True:
+            self.usercmd = input("G({0})> ".format(grp_name))
+
+            if re.match(self.cmdrgx_obj.exit, self.usercmd) is not None:
+                print("exit from group!")
+                break
+
+            elif re.match(self.cmdrgx_obj.show_members, self.usercmd) is not None:
+                members=self.dbhandler.get_members_of_group(groupid)
+                if len(members)==0:
+                    print("No Member Exist In This Group")
+                else:
+                    #TODO show who is admin
+                    for i in range(len(members)):
+                        print("{0}. {1}".format(i+1,members[i][0]))
+
+            #TODO‌ remove member
+
+            elif re.match(self.cmdrgx_obj.post, self.usercmd) is not None:
+                post_text=str()
+                print('Enter Your Post Content:')
+                temp = str()
+                while len(temp) == 0 or temp!=".":
+                    temp = (input()).strip()
+
+                    post_text += temp + "\n"
+
+                print("creating post...")
+                sleep(1)
+                if (self.dbhandler.create_new_post(
+                        userid, post_text.strip()[:-1], groupid)):
+                    print("✅ post sent.")
+                else:
+                    print('❌ Post creation failed ')
+
+            elif re.match(self.cmdrgx_obj.show_group_posts, self.usercmd) is not None:
+                posts=self.dbhandler.get_posts_of_group(groupid)
+                if len(posts)==0:
+                    print("No Has Posted Anything Yet")
+
+                else:
+                    for i in range(len(posts)):
+                        print('-------------------------')
+                        print("{0}. By {1} On {2}".format(i+1,posts[i][0],posts[i][2]))
+                        print("-------------------------")
+                        print(posts[i][1])
+
+
+            elif re.match(self.cmdrgx_obj.empty_cmd, self.usercmd) is not None:
+                continue
+
+            else:
+                print("not a valid command")
+
+
+
     def show_homepage(self):
         userid, = self.dbhandler.get_user_info(
             "userid", username=self.usercred_obj.username)
@@ -143,7 +195,7 @@ class FacebookCli:
         self.pagectx = self.homepagectx
 
         while (True):
-            self.usercmd = input("{0}> ".format(pagename))
+            self.usercmd = input("P({0})> ".format(pagename))
 
             if re.match(self.cmdrgx_obj.exit, self.usercmd) is not None:
                 print("exit from account!")
@@ -156,10 +208,11 @@ class FacebookCli:
                 while len(temp) == 0 or temp != ".":
                     temp = (input()).strip()
                     post_text += temp+"\n"
+
                 print("creating post...")
                 sleep(1)
                 if(self.dbhandler.create_new_post(
-                        userid, post_text.strip()[:-1], self.pagectx, "Page")):
+                        userid, post_text.strip()[:-1], self.pagectx)):
                     print("✅ post sent.")
                 else:
                     print('❌ Post creation failed ')
@@ -316,6 +369,7 @@ class FacebookCli:
                             i + 1, groups[i][0], '😎' if groups[i][1] == userid else ''))
                 else:
                     print('No Groups Yet')
+
             elif re.match(self.cmdrgx_obj.add_member, self.usercmd) is not None:
                 groups = self.dbhandler.get_groups_of_user(userid)
                 if len(groups):
@@ -341,6 +395,43 @@ class FacebookCli:
 
                 else:
                     print('No Groups Yet')
+
+            elif re.match(self.cmdrgx_obj.enter_group,self.usercmd) is not None:
+
+                grp_name=(self.usercmd.strip()).split()[1]
+
+                all_groups= self.dbhandler.get_groups_of_user(userid)
+
+                # filtering all groups based on grp_name
+                all_wanted_groups=[grp for grp in all_groups if grp[0]==grp_name]
+
+
+                if len(all_wanted_groups)==0:
+                    print("You Are Not Member Of Group {0} Anymore".format(grp_name))
+
+                elif len(all_wanted_groups)>1:
+                    for i in range(len(all_wanted_groups)):
+                        print('{0}.\t{1}\t{2}\n'.format(
+                            i + 1, all_wanted_groups[i][0], '😎' if all_wanted_groups[i][1] == userid else ''))
+                    while True:
+                        self.user_ans = re.sub("\s*", "", input("Which Group Do You Want To Enter? "))
+                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(all_wanted_groups) + 1)):
+                            groupctx=all_wanted_groups[int(self.user_ans)-1][2]
+                            self.show_groupctx(groupctx,grp_name,userid)
+                            break
+                else:
+                    groupctx = all_wanted_groups[0][2]
+                    self.show_groupctx(groupctx, grp_name,userid)
+
+
+
+
+
+            elif re.match(self.cmdrgx_obj.empty_cmd,self.usercmd) is not None:
+                continue
+            else:
+                print("not a valid command")
+
 
     def prompt(self):
         '''

@@ -65,7 +65,7 @@ class FacebookDB:
         birthdate = user_info['birthdate']
 
         sql_string = "'{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}','{9}','{10}','{11}'".format(firstname, lastname, birthdate, gender, phonenumber, password,
-                                                                                                        username, str(datetime.now()), 'NULL', 'NULL', 'NULL', 'NULL')
+                                                                                                        username, str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), 'NULL', 'NULL', 'NULL', 'NULL')
 
         self.server_hd.execute(
             "insert into users values({0})".format(sql_string))
@@ -124,17 +124,16 @@ class FacebookDB:
 
         return query_result
 
-    def create_new_post(self, uid, text, pageId, type):
-        if type == "Page":
+    def create_new_post(self, uid, text, destination_id):
 
-            sql_string = "{0},'{1}','{2}',{3}".format(
-                uid, text, str(datetime.now()), pageId)
-            try:
-                self.server_hd.execute(
-                    "insert into posts values({0})".format(sql_string))
-                return 1
-            except:
-                return 0
+        sql_string = "{0},'{1}','{2}',{3}".format(
+            uid, text, str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), destination_id)
+        try:
+            self.server_hd.execute(
+                "insert into posts values({0})".format(sql_string))
+            return 1
+        except:
+            return 0
 
     def get_posts_by_page_id(self, *args, **kwargs):
         args = [str(e) for e in args]
@@ -156,7 +155,7 @@ class FacebookDB:
 
     def like_post(self, postid, userid):
         sql_string = "{0},{1},'{2}'".format(
-            postid, userid, str(datetime.now()))
+            postid, userid, str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         try:
             self.server_hd.execute(
                 "insert into postlikes values ({0})".format(sql_string))
@@ -166,7 +165,7 @@ class FacebookDB:
 
     def comment_post(self, postid, userid, text):
         sql_string = "{0},{1},'{2}','{3}'".format(
-            postid, userid, text, str(datetime.now()))
+            postid, userid, text, str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         try:
             self.server_hd.execute(
                 "insert into comments values ({0})".format(sql_string))
@@ -239,7 +238,7 @@ class FacebookDB:
             page_id += 2
 
         sql_string = "{0},{1},'{2}','{3}','{4}',{5},'{6}','{7}'".format(
-            page_id, userid, page_name, category, 'NULL', '0', 'NULL', str(datetime.now()))
+            page_id, userid, page_name, category, 'NULL', '0', 'NULL', str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         status = self.server_hd.execute(
             "insert into pages values({0})".format(sql_string))
 
@@ -251,7 +250,7 @@ class FacebookDB:
         if len(query_result) != 0:
             group_id = query_result[0][0]
             group_id += 2
-        now_date = str(datetime.now())
+        now_date = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         sql_string_group = "{0},{1},'{2}','{3}','{4}'".format(
             group_id, adminid, groupname, group_description, now_date)
         try:
@@ -270,7 +269,7 @@ class FacebookDB:
         query_result = self.server_hd.fetchall()
         if (len(query_result)):
             return 0
-        now_date = str(datetime.now()) if nowdate is None else nowdate
+        now_date = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")) if nowdate is None else nowdate
         sql_string = "{0},{1},'{2}'".format(
             groupid, userid, now_date)
         try:
@@ -298,9 +297,51 @@ class FacebookDB:
 
         return query_result
 
+
+    def get_group_member_info(self,*args,**kwargs):
+        args = [str(e) for e in args]
+        columns = " , ".join(args)
+        conditions = str()
+        for k, v in kwargs.items():
+            if k.lower() in "groupid userid id":
+                conditions += (k + "=" + str(v) + " ")
+            else:
+                conditions += (k + "='" + str(v) + "' ")
+
+        conditions = " and ".join(conditions.split())
+
+        self.server_hd.execute(
+            "select {0} from groupmembers where {1}".format(columns, conditions))
+
+        query_result = self.server_hd.fetchall()
+
+        return query_result
+
+
     def get_groups_of_user(self, userid):
         self.server_hd.execute(
             "select g.GroupName,g.Admin,g.groupID from GroupMembers gm inner join groups g on gm.GroupID=g.GroupID where gm.UserID={0}".
             format(userid))
         query_result = self.server_hd.fetchall()
         return query_result
+
+    def get_members_of_group(self,groupid):
+
+        self.server_hd.execute("select u.Email from GroupMembers gm inner join Users u on gm.UserID = u.UserID where gm.GroupID ={0}".format(groupid))
+
+        return self.server_hd.fetchall()
+
+
+    def get_posts_of_group(self,groupid):
+        '''
+
+        :param groupid:
+        :return: (t.Email,p.Text,p.DateTime)
+        '''
+        self.server_hd.execute("select t.Email,p.Text,p.DateTime from (select u.UserID,u.Email from GroupMembers gm inner join Users u on gm.UserID=u.UserID where gm.GroupID={0}) t inner join Posts p on t.UserID=p.UserID".format(groupid))
+
+        return self.server_hd.fetchall()
+
+
+
+
