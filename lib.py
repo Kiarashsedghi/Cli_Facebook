@@ -14,6 +14,9 @@ class FacebookCliRegexes:
         self.showpage="^\s*explode\s*$"
         self.visitpage="^\s*visit\s+[a-zA-Z-]+\s*$"
         self.loadhomepage="^\s*home\s*$"
+        self.like="^\s*like\s*$"
+        self.dislike="^\s*dislike\s*$"
+        self.comment="^\s*comment\s*$"
 
 
 class FacebookUserCredentials:

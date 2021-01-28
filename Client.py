@@ -16,9 +16,9 @@ class FacebookCli:
         self.usercmd = None
         self.cmdrgx_obj = None
 
-        self.pagectx=int()
-        self.homepagectx=int()
-        self.user_ans=str()
+        self.pagectx = int()
+        self.homepagectx = int()
+        self.user_ans = str()
 
     def get_userpass(self):
         '''
@@ -41,7 +41,7 @@ class FacebookCli:
         # Create Facebook database handler
         # TODO‌ reading from a file / more secure than below
         self.dbhandler = FacebookDB(
-            "192.168.200.6", "Facebook", "sa", "abracadabra")
+            "127.0.0.1", "Facebook", "SA", "@1378Alisajad")
         if self.dbhandler.connect() is None:
             self.printe("Cannot connect to database... ")
             exit(5)
@@ -119,7 +119,8 @@ class FacebookCli:
                 bio = input("bio: ").strip()
                 current_city = input("current_city: ").strip()
                 hometown = input("hometown: ").strip()
-                relationship_status = input("relationship[married/single]: ").strip()
+                relationship_status = input(
+                    "relationship[married/single]: ").strip()
 
                 self.dbhandler.update_user_by_username(
                     username, bio=bio, currentcityname=current_city, hometownname=hometown, relationshipstatus=relationship_status)
@@ -130,14 +131,16 @@ class FacebookCli:
         print("Creating page for you ...")
         sleep(2)
         self.dbhandler.create_new_page(username)
-        self.usercred_obj=FacebookUserCredentials(username, password)
+        self.usercred_obj = FacebookUserCredentials(username, password)
         print("Your page is ready")
 
     def show_homepage(self):
-        userid,=self.dbhandler.get_user_info("userid",username=self.usercred_obj.username)
-        page_info=(self.dbhandler.get_page_info("pagename","pageid",userid=userid))
-        pagename,self.homepagectx=page_info[0]
-        self.pagectx=self.homepagectx
+        userid, = self.dbhandler.get_user_info(
+            "userid", username=self.usercred_obj.username)
+        page_info = (self.dbhandler.get_page_info(
+            "pagename", "pageid", userid=userid))
+        pagename, self.homepagectx = page_info[0]
+        self.pagectx = self.homepagectx
 
         while (True):
             self.usercmd = input("{0}> ".format(pagename))
@@ -146,55 +149,148 @@ class FacebookCli:
                 print("exit from account!")
                 return
 
-            elif re.match(self.cmdrgx_obj.post,self.usercmd) is not None:
-                post_text=str()
-                temp=str()
-                while len(temp)==0 or temp!=".":
-                    temp=(input()).strip()
-                    post_text+=temp+"\n"
-
+            elif (re.match(self.cmdrgx_obj.post, self.usercmd) is not None) and self.pagectx == self.homepagectx:
+                post_text = str()
+                print('Enter Your Post Content:')
+                temp = str()
+                while len(temp) == 0 or temp != ".":
+                    temp = (input()).strip()
+                    post_text += temp+"\n"
                 print("creating post...")
-                self.dbhandler.create_new_post(userid,post_text.strip(),pagename,"Page")
                 sleep(1)
-                print("post sent")
+                if(self.dbhandler.create_new_post(
+                        userid, post_text.strip()[:-1], self.pagectx, "Page")):
+                    print("✅ post sent.")
+                else:
+                    print('❌ Post creation failed ')
 
             elif re.match(self.cmdrgx_obj.showpage, self.usercmd) is not None:
+                page_contents = self.dbhandler.get_page_info(
+                    "*", pageid=self.pagectx)
+                page_posts = self.dbhandler.get_posts_by_page_id(
+                    "*", destination=self.pagectx)
+                print(page_contents, page_posts)
 
-                page_contents=self.dbhandler.get_page_info("*",pageid=self.pagectx)
-                page_posts=self.dbhandler.get_posts_by_page_id("*",destination=self.pagectx)
-                print(page_contents,page_posts)
+            elif re.match(self.cmdrgx_obj.like, self.usercmd) is not None:
+                page_posts = self.dbhandler.get_posts_by_page_id(
+                    '*', destination=self.pagectx)
+                if len(page_posts):
+                    for i in range(len(page_posts)):
+                        print('{0}) -----------{1}-----------'.format(i +
+                                                                      1, page_posts[i][3]))
+                        post_like_count = (self.dbhandler.get_post_likes(
+                            "count(*)", postid=page_posts[i][0]))[0][0]
+                        print("👍 liked by {0} users\n".format(post_like_count))
+                        print(page_posts[i][2]+'\n')
+                        # Todo : likes count
+                    while True:
+                        self.user_ans = re.sub(
+                            "\s*", "", input("👍 Which Post Do You Like? "))
+                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(page_posts)+1)):
+                            postid = page_posts[int(
+                                self.user_ans)-1][0]
+                            if self.dbhandler.like_post(postid, userid):
+                                print("✅ Post Liked")
+                            else:
+                                print('❌ Post like failed ')
+                            break
+                else:
+                    self.printe('No Post Exists.')
 
+            elif re.match(self.cmdrgx_obj.dislike, self.usercmd) is not None:
+                page_posts = self.dbhandler.get_posts_by_page_id(
+                    '*', destination=self.pagectx)
+                if len(page_posts):
+                    for i in range(len(page_posts)):
+                        print('{0}) -----------{1}-----------'.format(i +
+                                                                      1, page_posts[i][3]))
+                        post_like_count = (self.dbhandler.get_post_likes(
+                            "count(*)", postid=page_posts[i][0]))[0][0]
+                        print("👍 liked by {0} users\n".format(post_like_count))
+                        print(page_posts[i][2]+'\n')
+                        # Todo : likes count
+                    while True:
+                        self.user_ans = re.sub(
+                            "\s*", "", input("👎 Which Post Do You dislike? "))
+                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(page_posts)+1)):
+                            postid = page_posts[int(
+                                self.user_ans)-1][0]
+                            if self.dbhandler.dislike_post(postid, userid):
+                                print("✅ Post disliked")
+                            else:
+                                print('❌ Post dislike failed ')
+                            break
+                else:
+                    self.printe('No Post Exists.')
+
+            elif re.match(self.cmdrgx_obj.comment, self.usercmd) is not None:
+                page_posts = self.dbhandler.get_posts_by_page_id(
+                    '*', destination=self.pagectx)
+                if len(page_posts):
+                    for i in range(len(page_posts)):
+                        print('{0}) -----------{1}-----------'.format(i +
+                                                                      1, page_posts[i][3]))
+                        post_comment_count = (self.dbhandler.get_post_comments(
+                            "count(*)", postid=page_posts[i][0]))[0][0]
+                        print("📃 {0} comments.\n".format(
+                            post_comment_count))
+                        print(page_posts[i][2]+'\n')
+                        ##Todo : comments
+                    while True:
+                        self.user_ans = re.sub(
+                            "\s*", "", input("📃 Which Post Do You Want To Comment? "))
+
+                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(page_posts)+1)):
+                            postid = page_posts[int(
+                                self.user_ans)-1][0]
+                            comments = self.dbhandler.get_post_comments(
+                                'text', 'datetime', postid=postid)
+                            if len(comments):
+                                for i in range(len(comments)):
+                                    print(
+                                        '{0}) -----------{1}-----------'.format(i+1, comments[i][1]))
+                                    print(comments[i][0]+'\n')
+                            else:
+                                print('No Comment')
+                            comment_text = str()
+                            temp = str()
+                            print('Enter Your Comment:')
+                            while len(temp) == 0 or temp != ".":
+                                temp = (input()).strip()
+                                comment_text += temp+"\n"
+                            print('Creating Comment ...')
+                            sleep(1)
+                            if self.dbhandler.comment_post(postid, userid, comment_text):
+                                print("✅ Comment Added ")
+                            else:
+                                print('❌ Add Comment Failed ')
+                            break
+                else:
+                    self.printe('No Post Exists.')
 
             elif re.match(self.cmdrgx_obj.visitpage, self.usercmd) is not None:
-                pagename=(self.usercmd).split()[1]
-                query_result=self.dbhandler.get_page_info("pageid",pagename=pagename)
-                if len(query_result)==0:
+                pagename = (self.usercmd).split()[1]
+                query_result = self.dbhandler.get_page_info(
+                    "pageid", pagename=pagename)
+                if len(query_result) == 0:
                     print("Page {0} does not exist anymore".format(pagename))
-                elif len(query_result)==1:
-                    self.pagectx=query_result[0][0]
+                elif len(query_result) == 1:
+                    self.pagectx = query_result[0][0]
                 else:
                     print("which page do you want to visit?")
                     for i in range(len(query_result)):
-                        print("{0}-{1} {2}".format(i+1,pagename,query_result[i][0]))
+                        print("{0}-{1} {2}".format(i+1,
+                                                   pagename, query_result[i][0]))
 
                     while True:
-                        self.user_ans=re.sub("\s*","",input("?? "))
-                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1,len(query_result)+1)):
-                            self.pagectx=query_result[int(self.user_ans)-1][0]
+                        self.user_ans = re.sub("\s*", "", input("?? "))
+                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(query_result)+1)):
+                            self.pagectx = query_result[int(
+                                self.user_ans)-1][0]
                             break
 
             elif re.match(self.cmdrgx_obj.loadhomepage, self.usercmd) is not None:
-                self.pagectx=self.homepagectx
-
-        while (True):
-            self.usercmd = input("{0}> ".format(pagename))
-
-            if re.match(self.cmdrgx_obj.exit, self.usercmd) is not None:
-                print("exit from account!")
-                return
-
-
-
+                self.pagectx = self.homepagectx
 
     def prompt(self):
         '''

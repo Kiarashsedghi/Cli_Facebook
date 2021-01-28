@@ -20,7 +20,7 @@ class FacebookDB:
         '''
         conn = pymssql.connect(**self.server_properties)
         conn.autocommit(True)
-        self.server_hd= conn.cursor()
+        self.server_hd = conn.cursor()
         return self.server_hd
 
         # conn = pymssql.connect(server='localhost', port='1433',
@@ -84,60 +84,59 @@ class FacebookDB:
         self.server_hd.execute(
             "update users {0} where email='{1}'".format(sql_string, username))
 
-
-    def get_user_info(self,*args,**kwargs):
-        args=[str(e) for e in args]
-        columns=" , ".join(args)
-        conditions=str()
-        for k,v in kwargs.items():
-            if k.lower()=="userid":
-                conditions+=(k+"="+str(v)+" ")
+    def get_user_info(self, *args, **kwargs):
+        args = [str(e) for e in args]
+        columns = " , ".join(args)
+        conditions = str()
+        for k, v in kwargs.items():
+            if k.lower() == "userid":
+                conditions += (k+"="+str(v)+" ")
             else:
-                conditions+=(k+"='"+str(v)+"' ")
+                conditions += (k+"='"+str(v)+"' ")
 
-        conditions=" and ".join(conditions.split())
-        conditions=conditions.replace("username","email")
+        conditions = " and ".join(conditions.split())
+        conditions = conditions.replace("username", "email")
 
-        self.server_hd.execute("select {0} from users where {1}".format(columns,conditions))
-        query_result=self.server_hd.fetchall()
+        self.server_hd.execute(
+            "select {0} from users where {1}".format(columns, conditions))
+        query_result = self.server_hd.fetchall()
 
-        if len(query_result)!=0:
+        if len(query_result) != 0:
             return query_result[0]
 
         return None
 
-    def get_page_info(self,*args,**kwargs):
-        args=[str(e) for e in args]
-        columns=" , ".join(args)
-        conditions=str()
-        for k,v in kwargs.items():
+    def get_page_info(self, *args, **kwargs):
+        args = [str(e) for e in args]
+        columns = " , ".join(args)
+        conditions = str()
+        for k, v in kwargs.items():
             if k.lower() in "pageid userid":
-                conditions+=(k+"="+str(v)+" ")
+                conditions += (k+"="+str(v)+" ")
             else:
-                conditions+=(k+"='"+str(v)+"' ")
+                conditions += (k+"='"+str(v)+"' ")
 
-        conditions=" and ".join(conditions.split())
+        conditions = " and ".join(conditions.split())
 
-
-        self.server_hd.execute("select {0} from pages where {1}".format(columns,conditions))
-        query_result=self.server_hd.fetchall()
-
+        self.server_hd.execute(
+            "select {0} from pages where {1}".format(columns, conditions))
+        query_result = self.server_hd.fetchall()
 
         return query_result
 
-    def create_new_post(self,uid,text,pagename,type):
-        if type=="Page":
+    def create_new_post(self, uid, text, pageId, type):
+        if type == "Page":
 
-            query_result=self.get_page_info("pageid",pagename=pagename)
-            #TODO
+            sql_string = "{0},'{1}','{2}',{3}".format(
+                uid, text, str(datetime.now()), pageId)
+            try:
+                self.server_hd.execute(
+                    "insert into posts values({0})".format(sql_string))
+                return 1
+            except:
+                return 0
 
-            page_id=query_result[0]
-
-
-            sql_string="{0},'{1}','{2}',{3}".format(uid,text,str(datetime.now()),page_id)
-            self.server_hd.execute("insert into posts values({0})".format(sql_string))
-
-    def get_posts_by_page_id(self,*args,**kwargs):
+    def get_posts_by_page_id(self, *args, **kwargs):
         args = [str(e) for e in args]
         columns = " , ".join(args)
         conditions = str()
@@ -149,28 +148,98 @@ class FacebookDB:
 
         conditions = " and ".join(conditions.split())
 
-        self.server_hd.execute("select {0} from posts where {1}".format(columns, conditions))
+        self.server_hd.execute(
+            "select {0} from posts where {1}".format(columns, conditions))
         query_result = self.server_hd.fetchall()
 
         return query_result
 
-    def create_new_page(self,username,page_name=None,category=None):
+    def like_post(self, postid, userid):
+        sql_string = "{0},{1},'{2}'".format(
+            postid, userid, str(datetime.now()))
+        try:
+            self.server_hd.execute(
+                "insert into postlikes values ({0})".format(sql_string))
+            return 1
+        except:
+            return 0
 
-        userid,firstname,lastname=self.get_user_info("userid","firstname","lastname",username=username)
+    def comment_post(self, postid, userid, text):
+        sql_string = "{0},{1},'{2}','{3}'".format(
+            postid, userid, text, str(datetime.now()))
+        try:
+            self.server_hd.execute(
+                "insert into comments values ({0})".format(sql_string))
+            return 1
+        except:
+            return 0
+
+    def dislike_post(self, postid, userid):
+        sql_string = "postid={0} and userid={1}".format(
+            postid, userid)
+        try:
+            self.server_hd.execute(
+                "delete from postlikes where ({0})".format(sql_string))
+            return 1
+        except:
+            return 0
+
+    def get_post_comments(self, *args, ** kwargs):
+        args = [str(e) for e in args]
+        columns = " , ".join(args)
+        conditions = str()
+        for k, v in kwargs.items():
+            if k.lower() in "commentid postid userid":
+                conditions += (k + "=" + str(v) + " ")
+            else:
+                conditions += (k + "='" + str(v) + "' ")
+
+        conditions = " and ".join(conditions.split())
+
+        self.server_hd.execute(
+            "select {0} from comments where {1}".format(columns, conditions))
+        query_result = self.server_hd.fetchall()
+        return query_result
+
+    def get_post_likes(self, *args, ** kwargs):
+        args = [str(e) for e in args]
+        columns = " , ".join(args)
+        conditions = str()
+        for k, v in kwargs.items():
+            if k.lower() in "postid userid":
+                conditions += (k + "=" + str(v) + " ")
+            else:
+                conditions += (k + "='" + str(v) + "' ")
+
+        conditions = " and ".join(conditions.split())
+
+        self.server_hd.execute(
+            "select {0} from postLikes where {1}".format(columns, conditions))
+        query_result = self.server_hd.fetchall()
+
+        return query_result
+
+    def create_new_page(self, username, page_name=None, category=None):
+
+        userid, firstname, lastname = self.get_user_info(
+            "userid", "firstname", "lastname", username=username)
 
         if page_name is None:
-            page_name=firstname+"-"+lastname
+            page_name = firstname+"-"+lastname
 
         if category is None:
-            category="Regular"
+            category = "Regular"
 
-
-        self.server_hd.execute("select top 1 PageID from pages order by PageID desc ")
-        query_result=self.server_hd.fetchall()
-        page_id=0
+        self.server_hd.execute(
+            "select top 1 PageID from pages order by PageID desc ")
+        query_result = self.server_hd.fetchall()
+        page_id = 0
         if len(query_result) != 0:
-            page_id=query_result[0][0]
-            page_id+=2
+            page_id = query_result[0][0]
+            page_id += 2
 
-        sql_string="{0},{1},'{2}','{3}','{4}',{5},'{6}','{7}'".format(page_id,userid,page_name,category,'NULL','0','NULL',str(datetime.now()))
-        status=self.server_hd.execute("insert into pages values({0})".format(sql_string))
+        sql_string = "{0},{1},'{2}','{3}','{4}',{5},'{6}','{7}'".format(
+            page_id, userid, page_name, category, 'NULL', '0', 'NULL', str(datetime.now()))
+        status = self.server_hd.execute(
+            "insert into pages values({0})".format(sql_string))
+
