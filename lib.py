@@ -15,7 +15,7 @@ class FacebookCliRegexes:
         self.visitpage="^\s*visit\s+[a-zA-Z-]+\s*$"
         self.loadhomepage="^\s*home\s*$"
         self.like="^\s*like\s*$"
-        self.dislike="^\s*dislike\s*$"
+        self.unlike="^\s*unlike\s*$"
         self.comment="^\s*comment\s*$"
         self.create_group="^\s*newgrp\s*$"
         self.remove_group="^\s*rmgrp\s*$"
