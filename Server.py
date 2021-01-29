@@ -23,11 +23,6 @@ class FacebookDB:
         self.server_hd = conn.cursor()
         return self.server_hd
 
-        # conn = pymssql.connect(server='localhost', port='1433',
-        #                        user='SA', password='@1378Alisajad', database='my')
-        # conn.autocommit(True)
-        # cursor = conn.cursor()
-        # self.server_db_handler = curso
 
     def authenticate_user(self, username, password):
         '''
@@ -407,3 +402,53 @@ class FacebookDB:
         except:
             return 0
 
+    def is_user_admin_of_group(self,userid,groupid):
+        self.server_hd.execute("""
+        select count(*)
+        from GroupMembers gm inner join Groups g
+        on gm.GroupID=g.GroupID
+        where gm.GroupID={0} and g.Admin={1}
+        """.format(groupid,userid))
+
+        return self.server_hd.fetchall()[0][0]
+
+    def remove_user_from_group(self,groupid,userid):
+        try:
+            self.server_hd.execute("""
+            delete
+            from groupmembers
+            where groupid={0} and userid={1}
+            """.format(groupid,userid))
+
+            return 1
+        except:
+            return 0
+
+    def remove_group(self,groupid):
+        try:
+            self.server_hd.execute("""
+            delete from groupmembers
+            where groupid={0}
+            """.format(groupid))
+
+            self.server_hd.execute("""
+                        delete from groups
+                        where groupid={0}
+                        """.format(groupid))
+            return 1
+
+        except:
+            return 0
+
+    def leave_group(self,groupid,userid):
+        try:
+            self.server_hd.execute("""
+            delete 
+            from groupmembers
+            where groupid={0} and userid={1}
+            """.format(groupid,userid))
+
+            return 1
+
+        except:
+            return 0

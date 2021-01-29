@@ -18,6 +18,7 @@ class FacebookCli:
 
         self.pagectx = int()
         self.homepagectx = int()
+        self.homepagename=str()
         self.user_ans = str()
 
     def get_userpass(self):
@@ -136,10 +137,7 @@ class FacebookCli:
         print("Content\n")
         print(post[1])
 
-
-
     def show_groupctx(self,groupid,grp_name,userid):
-
 
         while True:
             self.usercmd = input("G({0})> ".format(grp_name))
@@ -153,11 +151,64 @@ class FacebookCli:
                 if len(members)==0:
                     print("No Member Exist In This Group")
                 else:
-                    #TODO show who is admin
                     for i in range(len(members)):
-                        print("{0}. {1}".format(i+1,members[i][0]))
+                        member_userid=self.dbhandler.get_user_info("userid",username=members[i][0])[0]
 
-            #TODO‌ remove member
+                        if self.dbhandler.is_user_admin_of_group(member_userid, groupid):
+                            # TODO show who is admin
+                            print("{0}. {1} ***".format(i + 1, members[i][0]))
+                        else:
+                            print("{0}. {1}".format(i + 1, members[i][0]))
+
+
+            elif re.match(self.cmdrgx_obj.remove_member, self.usercmd) is not None:
+                if self.dbhandler.is_user_admin_of_group(userid,groupid):
+
+                    members = self.dbhandler.get_members_of_group(groupid)
+
+                    if len(members) == 0:
+                        print("No Member Exist In This Group")
+                    else:
+                        for i in range(len(members)):
+                            member_userid = self.dbhandler.get_user_info("userid", username=members[i][0])[0]
+
+                            if self.dbhandler.is_user_admin_of_group(member_userid, groupid):
+                                # TODO show who is admin
+                                print("{0}. {1} ***".format(i + 1, members[i][0]))
+                            else:
+                                print("{0}. {1}".format(i + 1, members[i][0]))
+
+                        while True:
+                            self.user_ans = re.sub("\s*", "", input("👍 Which Member Do You Want To Remove? "))
+                            if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(members) + 1)):
+                                member_username= members[int(self.user_ans) - 1][0]
+                                member_userid=self.dbhandler.get_user_info("userid",username=member_username)[0]
+
+                                if member_userid==userid:
+                                    print("You Cannot Delete Yourself, You Are Admin")
+                                else:
+                                    if self.dbhandler.remove_user_from_group(groupid,member_userid):
+                                        print("✅ Member Removed Successfully")
+                                    else:
+                                        print('❌ Member Removal Failed')
+                                break
+
+
+                else:
+                    print("Your Are Not Admin Of The Group {0}".format(grp_name))
+
+
+            elif re.match(self.cmdrgx_obj.leave_group, self.usercmd) is not None:
+                if not self.dbhandler.is_user_admin_of_group(userid,groupid):
+
+                    if self.dbhandler.leave_group(groupid,userid):
+                        print("You Left The Group Successfully")
+                        return
+                    else:
+                        print("Leaving Group Failed")
+                else:
+                    print("You Are Admin Of Group {0}, You Cannot Leave".format(grp_name))
+
 
             elif re.match(self.cmdrgx_obj.post, self.usercmd) is not None:
                 post_text=str()
@@ -246,7 +297,6 @@ class FacebookCli:
                 else:
                     print('No Post Exists.')
 
-
             elif re.match(self.cmdrgx_obj.show_comments_of_post, self.usercmd) is not None:
                 posts = self.dbhandler.get_posts_of_group(groupid)
 
@@ -261,15 +311,11 @@ class FacebookCli:
                 else:
                     print('No Post Exists.')
 
-
             elif re.match(self.cmdrgx_obj.empty_cmd,self.usercmd) is not None:
                 continue
 
-
             else:
                 print("not a valid command")
-
-
 
     def show_comments_of_post(self,postid):
         comments = self.dbhandler.get_post_comments(
@@ -281,7 +327,6 @@ class FacebookCli:
                 print(comments[i][0] + '\n')
         else:
             print('No Comment')
-
 
     def show_chat_context(self,username,userid,peer_userid):
 
@@ -338,8 +383,6 @@ class FacebookCli:
                 continue
             else:
                 print("not a valid command")
-
-
 
     def run_messanger(self,userid,username):
 
@@ -400,15 +443,14 @@ class FacebookCli:
             else:
                 print("not a valid command")
 
-
-
     def show_homepage(self):
         userid, = self.dbhandler.get_user_info(
             "userid", username=self.usercred_obj.username)
         page_info = (self.dbhandler.get_page_info(
             "pagename", "pageid", userid=userid))
-        pagename, self.homepagectx = page_info[0]
+        self.homepagename, self.homepagectx = page_info[0]
         self.pagectx = self.homepagectx
+        pagename=self.homepagename
 
         while (True):
             self.usercmd = input("P({0})> ".format(pagename))
@@ -525,25 +567,27 @@ class FacebookCli:
                     print('No Post Exists.')
 
             elif re.match(self.cmdrgx_obj.visitpage, self.usercmd) is not None:
-                pagename = (self.usercmd).split()[1]
-                query_result = self.dbhandler.get_page_info("pageid", pagename=pagename)
+                destination_page = (self.usercmd).split()[1]
+                query_result = self.dbhandler.get_page_info("pageid", pagename=destination_page)
 
                 if len(query_result) == 0:
-                    print("Page {0} does not exist anymore".format(pagename))
+                    print("Page {0} does not exist anymore".format(destination_page))
                 elif len(query_result) == 1:
+                    pagename=destination_page
                     self.pagectx = query_result[0][0]
                 else:
                     for i in range(len(query_result)):
-                        print("{0}-{1} {2}".format(i+1,pagename, query_result[i][0]))
+                        print("{0}. {1} {2}".format(i+1,destination_page, query_result[i][0]))
 
                     while True:
                         self.user_ans = re.sub("\s*", "", input("which page do you want to visit? "))
                         if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(query_result)+1)):
-                            self.pagectx = query_result[int(
-                                self.user_ans)-1][0]
+                            pagename=destination_page
+                            self.pagectx = query_result[int(self.user_ans)-1][0]
                             break
 
             elif re.match(self.cmdrgx_obj.loadhomepage, self.usercmd) is not None:
+                pagename=self.homepagename
                 self.pagectx = self.homepagectx
 
             elif re.match(self.cmdrgx_obj.create_group, self.usercmd) is not None:
@@ -561,6 +605,37 @@ class FacebookCli:
                     print('✅ Your Group Created Successfully')
                 else:
                     print('❌ Group Creation Failed')
+
+
+            elif re.match(self.cmdrgx_obj.remove_group, self.usercmd) is not None:
+
+                groups = self.dbhandler.get_groups_of_user(userid)
+
+                if len(groups)==0:
+                    print("No Group To Remove")
+
+                else:
+                    for i in range(len(groups)):
+                        print('{0}.\t{1}\t{2}\n'.format(
+                            i + 1, groups[i][0], '😎' if groups[i][1] == userid else ''))
+
+                    while True:
+                        self.user_ans = re.sub("\s*", "", input("📃 Which Group Do You Want To Remove? "))
+                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(groups) + 1)):
+                            group_id=groups[int(self.user_ans) - 1][2]
+                            grp_name=groups[int(self.user_ans) - 1][0]
+
+                            if self.dbhandler.is_user_admin_of_group(userid,group_id):
+                                if self.dbhandler.remove_group(group_id):
+                                    print("Group {0} Removed Successfully".format(grp_name))
+                                else:
+                                    print("Group Removal Failed")
+                            else:
+                                print("You Are Not Admin Of This Group, You Cannot Remove This Group")
+                            break
+
+
+
 
             elif re.match(self.cmdrgx_obj.show_group, self.usercmd) is not None:
                 groups = self.dbhandler.get_groups_of_user(userid)
@@ -627,7 +702,7 @@ class FacebookCli:
             elif re.match(self.cmdrgx_obj.show_friends, self.usercmd) is not None:
                 friends=self.dbhandler.get_friends_of_user(userid)
                 if len(friends)==0:
-                    print("NO Friend To Unfollow")
+                    print("NO Friend")
                 else:
                     for i in range(len(friends)):
                         print("{0}. {1}".format(i+1,friends[i][0]))
@@ -676,7 +751,6 @@ class FacebookCli:
             else:
                 print("not a valid command")
 
-
     def prompt(self):
         '''
         This function gives the cli prompt to the user
@@ -711,6 +785,8 @@ class FacebookCli:
 
 
 
+
 client_obj = FacebookCli()
 client_obj.initialize()
 client_obj.prompt()
+
