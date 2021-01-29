@@ -4,6 +4,7 @@ import re
 from time import sleep
 from datetime import datetime
 
+from os import system
 from getpass import getpass
 
 
@@ -504,7 +505,7 @@ class FacebookCli:
                 # print(page_contents, page_posts)
                 page_info = page_contents[0]
                 page_name = page_info[2]
-    
+
                 print('------------{0}------------\n\n'.format(page_name))
                 if len(page_posts):
                     for i in range(len(page_posts)):
@@ -801,6 +802,9 @@ class FacebookCli:
 
             elif re.match(self.cmdrgx_obj.empty_cmd, self.usercmd) is not None:
                 continue
+            elif re.match(self.cmdrgx_obj.profile, self.usercmd) is not None:
+                system("python3 ./profile.py " + str(userid))
+
             else:
                 print("Not A Valid Command")
 

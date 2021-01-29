@@ -1,11 +1,23 @@
-import pyodbc
+# import pyodbc
+import pymssql
+from sys import argv
 
 def facebookDbConnection():
-    conn = pyodbc.connect('Driver={SQL Server};'
-                      'Server=.\SQL2019;'
-                      'Database=Facebook;'
-                      'Trusted_Connection=yes;')
+    server_properties = {
+            'host': '127.0.0.1',
+            'database': 'Facebook',
+            'user': 'SA',
+            'password': '@1378Alisajad'
+        }
+
+    conn = pymssql.connect(**server_properties)
+    conn.autocommit(True)
+    # conn = pyodbc.connect('Driver={SQL Server};'
+    #                   'Server=.\SQL2019;'
+    #                   'Database=Facebook;'
+    #                   'Trusted_Connection=yes;')
     return conn
+
 
 def show(tableName, conn):
     cursor = conn.cursor()
@@ -67,7 +79,7 @@ def operateColleges(command, userId, conn):
 
         while command>0:
             print("Please Enter command number: ")
-            command = input()
+            command = int(input())
             if command == 0 and collegeName == "" and hasValue:
                 print("College Name can't be empty\n")
                 command = 20
@@ -110,7 +122,7 @@ def operateColleges(command, userId, conn):
 
         while command>0:
             print("Please Enter command number: ")
-            command = input()
+            command = int(input())
 
             if command == 1: # College Name
                 collegeName = input()
@@ -142,7 +154,6 @@ def operateColleges(command, userId, conn):
     elif command == 3: # 3 -> Delete
         print("Enter Id:")
         Id = input()
-
         cursor.execute('DELETE FROM Colleges WHERE ID = ' + Id + ' AND UserID = ' + userId)
         conn.commit()
     return
@@ -171,7 +182,7 @@ def operateSchools(command, userId, conn):
 
         while command>0:
             print("Please Enter command number:")
-            command = input()
+            command = int(input())
             if command == 0 and schoolName == "" and hasValue:
                 print("School Name can't be empty")
                 command = 20
@@ -204,7 +215,7 @@ def operateSchools(command, userId, conn):
 
         while command>0:
             print("Please Enter command number:")
-            command = input()
+            command = int(input())
 
             if command == 1: # School Name
                 schoolName = input()
@@ -266,7 +277,7 @@ def operateLikes(command, tableName, userId, conn):
         print("Enter a name: ")
         Name = input()
         query = 'INSERT INTO ' + tableName + ' (Name) VALUES ( ' + Name + ' ) WHERE UserID = ' + userId
-        cursor.execute(query3)
+        cursor.execute(query)
         conn.commit()
     elif command == 2: # 2 -> Edit
         print("Enter Id:")
@@ -309,7 +320,7 @@ def operateSocialLinks(command, userId, conn):
 
         while command>0:
             print("Please Enter command number:")
-            command = input()
+            command = int(input())
             if command == 0 and socialNetwork == ""  and accountName == "" and hasValue:
                 print("social Network Name or account Name can't be empty")
                 command = 20
@@ -345,7 +356,7 @@ def operateSocialLinks(command, userId, conn):
 
         while command>0:
             print("Please Enter command number:")
-            command = input()
+            command = int(input())
 
             if command == 1: # Social Network Name
                 socialNetwork = input()
@@ -405,7 +416,7 @@ def operateWorkPlaces(command, userId, conn):
 
         while command>0:
             print("Please Enter command number:")
-            command = input()
+            command = int(input())
             if command == 0 and workPlaceName == "" and hasValue:
                 print("Work Place Name can't be empty")
                 command = 20
@@ -450,7 +461,7 @@ def operateWorkPlaces(command, userId, conn):
 
         while command>0:
             print("Please Enter command number:")
-            command = input()
+            command = int(input())
 
             if command == 1: # Work Place Name
                 workPlaceName = input()
@@ -491,7 +502,8 @@ def operateWorkPlaces(command, userId, conn):
 
 command = 1
 conn = facebookDbConnection()
-userId = 1
+
+userId = argv[1]
 
 while command>0:
     viewData = 0

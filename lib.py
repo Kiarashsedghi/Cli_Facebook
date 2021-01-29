@@ -37,6 +37,7 @@ class FacebookCliRegexes:
         self.show_chat_messages="^\s*show\s*$"
         self.send_message_in_chat="^\s*send\s*$"
         self.new_chat_message="^\s*new\s*$"
+        self.profile = "^\s*profile\s*$"
 
 
 class FacebookUserCredentials:

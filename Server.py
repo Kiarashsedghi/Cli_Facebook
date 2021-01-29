@@ -120,7 +120,6 @@ class FacebookDB:
         return query_result
 
     def create_new_post(self, uid, text, destination_id):
-
         sql_string = "{0},'{1}','{2}',{3}".format(
             uid, text, str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), destination_id)
         try:
