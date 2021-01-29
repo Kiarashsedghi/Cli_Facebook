@@ -43,7 +43,7 @@ class FacebookDB:
             return 0
         return 1
 
-    def is_username_taken(self, username):
+    def does_username_exist(self, username):
         '''
         This function checks whether username is already taken or not
         :param username:
@@ -297,7 +297,6 @@ class FacebookDB:
 
         return query_result
 
-
     def get_group_member_info(self,*args,**kwargs):
         args = [str(e) for e in args]
         columns = " , ".join(args)
@@ -317,7 +316,6 @@ class FacebookDB:
 
         return query_result
 
-
     def get_groups_of_user(self, userid):
         self.server_hd.execute(
             "select g.GroupName,g.Admin,g.groupID from GroupMembers gm inner join groups g on gm.GroupID=g.GroupID where gm.UserID={0}".
@@ -331,7 +329,6 @@ class FacebookDB:
 
         return self.server_hd.fetchall()
 
-
     def get_posts_of_group(self,groupid):
         '''
 
@@ -342,6 +339,71 @@ class FacebookDB:
 
         return self.server_hd.fetchall()
 
+    def get_friends_of_user(self,userid):
 
+        self.server_hd.execute("select u.Email,fr.friendid from Friendship fr inner join Users u on fr.FriendID=u.UserID where fr.UserID={0}".format(userid))
 
+        return self.server_hd.fetchall()
+
+    def create_new_friendship(self,userid,friendusername):
+
+        self.server_hd.execute("select userid from users where email='{0}'".format(friendusername))
+
+        friendid=self.server_hd.fetchall()[0][0]
+        sql_string="{0},{1},'{2}'".format(userid,friendid,str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
+        try:
+            self.server_hd.execute("insert into friendship values({0})".format(sql_string))
+            return 1
+        except:
+            return 0
+
+    def remove_friendship(self,userid,friendid):
+        try:
+            self.server_hd.execute("delete from friendship where userid={0} and friendid={1}".format(userid,friendid))
+            return 1
+        except:
+            return 0
+
+    def get_messages_info(self, *args, ** kwargs):
+        args = [str(e) for e in args]
+        columns = " , ".join(args)
+        conditions = str()
+        for k, v in kwargs.items():
+            if k.lower() in "messageid fromuserid touserid":
+                conditions += (k + "=" + str(v) + " ")
+            else:
+                conditions += (k + "='" + str(v) + "' ")
+
+        conditions = " and ".join(conditions.split())
+
+        self.server_hd.execute(
+            "select {0} from messages where {1}".format(columns, conditions))
+        query_result = self.server_hd.fetchall()
+        return query_result
+
+    def get_users_have_chats_with(self,userid):
+        self.server_hd.execute('''
+                    select u.Email ,UserID
+            from users u
+            where u.UserID in (select m.toUserID
+            from Messages m
+            where m.fromUserID={0}
+            union
+            select m.fromUserID
+            from Messages m
+            where m.toUserID={0}
+            )
+            '''.format(userid))
+
+        return self.server_hd.fetchall()
+
+    def send_message_in_chat(self,userid,peer_userid,text):
+
+        sql_string="{0},{1},'{2}','{3}'".format(userid,peer_userid,text,str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        try:
+            self.server_hd.execute("insert into messages values({0})".format(sql_string))
+            return 1
+        except:
+            return 0
 

@@ -17,14 +17,23 @@ class FacebookCliRegexes:
         self.like="^\s*like\s*$"
         self.dislike="^\s*dislike\s*$"
         self.comment="^\s*comment\s*$"
-        self.create_group="^\s*newgrp*\s*$"
-        self.show_group="^\s*showgrp*\s*$"
-        self.add_member="^\s*addmem*\s*$"
+        self.create_group="^\s*newgrp\s*$"
+        self.show_group="^\s*showgrp\s*$"
+        self.add_member="^\s*addmem\s*$"
         self.enter_group="^\s*enter\s+[a-zA-Z-]+\s*$"
         self.empty_cmd="^\s*$"
-        self.show_members="^\s*showmem*\s*$"
-        self.show_group_posts="^\s*showpost*\s*$"
-        self.show_comments_of_post="^\s*showcmt*\s*"
+        self.show_members="^\s*showmem\s*$"
+        self.show_group_posts="^\s*showpost\s*$"
+        self.show_comments_of_post="^\s*showcmt\s*$"
+        self.show_friends="^\s*friends\s*$"
+        self.add_friend="^\s*newfriend\s*$"
+        self.remove_friend="^\s*rmfriend\s*$"
+        self.messenger= "^\s*chat\s*$"
+        self.show_chats="^\s*list\s*$"
+        self.enter_chat="^\s*enter\s+\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}\s*$"
+        self.show_chat_messages="^\s*show\s*$"
+        self.send_message_in_chat="^\s*send\s*$"
+        self.new_chat_message="^\s*new\s*$"
 
 
 class FacebookUserCredentials:
@@ -32,6 +41,8 @@ class FacebookUserCredentials:
         self.username=username
         self.password=password
         self.page_name=str()
+
+
 
 
 

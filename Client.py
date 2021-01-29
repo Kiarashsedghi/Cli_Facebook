@@ -81,7 +81,7 @@ class FacebookCli:
 
         while (1):
             username = (input("username: ")).strip()
-            if self.dbhandler.is_username_taken(username):
+            if self.dbhandler.does_username_exist(username):
                 print(
                     "username {0} has been already taken".format(username))
                 continue
@@ -270,6 +270,7 @@ class FacebookCli:
                 print("not a valid command")
 
 
+
     def show_comments_of_post(self,postid):
         comments = self.dbhandler.get_post_comments(
             'text', 'datetime', postid=postid)
@@ -280,6 +281,125 @@ class FacebookCli:
                 print(comments[i][0] + '\n')
         else:
             print('No Comment')
+
+
+    def show_chat_context(self,username,userid,peer_userid):
+
+        while (True):
+            self.usercmd = input("C({0})> ".format(username))
+
+            if re.match(self.cmdrgx_obj.exit, self.usercmd) is not None:
+                print("exit from chat!")
+                return
+
+            elif re.match(self.cmdrgx_obj.show_chat_messages, self.usercmd) is not None:
+
+                incoming_chats = self.dbhandler.get_messages_info("text", "datetime", touserid=userid,
+                                                                  fromuserid=peer_userid)
+                outgoing_chats = self.dbhandler.get_messages_info("text", "datetime", touserid=peer_userid,
+                                                                  fromuserid=userid)
+
+                incoming_chats = [('i', *e) for e in incoming_chats]
+                outgoing_chats = [('o', *e) for e in outgoing_chats]
+
+                all_chats = [*incoming_chats, *outgoing_chats]
+
+                # sort by datetime
+                all_chats = sorted(all_chats, key=lambda x: x[2])
+                if len(all_chats)==0:
+                    print("No Message Yet")
+                else:
+                    for chat in all_chats:
+                        if chat[0] == 'o':
+
+                            for line in chat[1].split("\n"):
+                                if line.strip():
+                                    print("\t\t\t{0}".format(line))
+                        else:
+                            print("{0}".format(chat[1]))
+
+
+            elif re.match(self.cmdrgx_obj.send_message_in_chat, self.usercmd) is not None:
+                message_text = str()
+                print('Enter Your Message Content:')
+                temp = str()
+                while len(temp) == 0 or temp != ".":
+                    temp = (input()).strip()
+                    message_text += temp + "\n"
+
+                #TODO emoji
+                if self.dbhandler.send_message_in_chat(userid,peer_userid,message_text.strip()[:-1]):
+                    print("Your Message Sent Successfully")
+                else:
+                    print("Your Message Not Sent")
+
+
+            elif re.match(self.cmdrgx_obj.empty_cmd, self.usercmd) is not None:
+                continue
+            else:
+                print("not a valid command")
+
+
+
+    def run_messanger(self,userid,username):
+
+
+        while (True):
+            self.usercmd = input("M({0})> ".format(username))
+
+            if re.match(self.cmdrgx_obj.exit, self.usercmd) is not None:
+                print("exit from Messenger!")
+                return
+
+            elif re.match(self.cmdrgx_obj.show_chats, self.usercmd) is not None:
+
+                chatlist=self.dbhandler.get_users_have_chats_with(userid)
+
+                if len(chatlist)==0:
+                    print("No Message Yet")
+
+                else:
+                    for i in range(len(chatlist)):
+                        print("{0}. {1}".format(i+1,chatlist[i][0]))
+
+            elif re.match(self.cmdrgx_obj.new_chat_message, self.usercmd) is not None:
+                peer_username=input("Who Do You Want To Chat With? ")
+
+                if self.dbhandler.does_username_exist(peer_username):
+                    chatlist = self.dbhandler.get_users_have_chats_with(userid)
+                    # check whether we had chat with peer_username or not
+                    if peer_username in [e[0] for e in chatlist]:
+                        print("You Have Already a Chat Session With {0}".format(peer_username))
+
+                    peer_userid=self.dbhandler.get_user_info("userid",username=peer_username)[0]
+                    self.show_chat_context(peer_username,userid,peer_userid)
+
+                    pass
+                else:
+                    print("Username {0} Does Not Exist".format(peer_username))
+
+                pass
+
+            elif re.match(self.cmdrgx_obj.enter_chat, self.usercmd) is not None:
+
+
+
+                username=(self.usercmd.strip()).split()[-1]
+
+                user_id_tuple=self.dbhandler.get_user_info("userid",username=username)
+
+                if user_id_tuple:
+                    self.show_chat_context(username, userid,user_id_tuple[0])
+
+                else:
+                    print("Username {0} Does Not Exist".format(username))
+
+
+            elif re.match(self.cmdrgx_obj.empty_cmd, self.usercmd) is not None:
+                continue
+            else:
+                print("not a valid command")
+
 
 
     def show_homepage(self):
@@ -406,20 +526,18 @@ class FacebookCli:
 
             elif re.match(self.cmdrgx_obj.visitpage, self.usercmd) is not None:
                 pagename = (self.usercmd).split()[1]
-                query_result = self.dbhandler.get_page_info(
-                    "pageid", pagename=pagename)
+                query_result = self.dbhandler.get_page_info("pageid", pagename=pagename)
+
                 if len(query_result) == 0:
                     print("Page {0} does not exist anymore".format(pagename))
                 elif len(query_result) == 1:
                     self.pagectx = query_result[0][0]
                 else:
-                    print("which page do you want to visit?")
                     for i in range(len(query_result)):
-                        print("{0}-{1} {2}".format(i+1,
-                                                   pagename, query_result[i][0]))
+                        print("{0}-{1} {2}".format(i+1,pagename, query_result[i][0]))
 
                     while True:
-                        self.user_ans = re.sub("\s*", "", input("?? "))
+                        self.user_ans = re.sub("\s*", "", input("which page do you want to visit? "))
                         if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(query_result)+1)):
                             self.pagectx = query_result[int(
                                 self.user_ans)-1][0]
@@ -506,34 +624,51 @@ class FacebookCli:
                     groupctx = all_wanted_groups[0][2]
                     self.show_groupctx(groupctx, grp_name,userid)
 
-
-
-
-
-            elif re.match(self.cmdrgx_obj.empty_cmd,self.usercmd) is not None:
-                continue
-            else:
-                print("not a valid command")
-
-                if len(all_wanted_groups)==0:
-                    print("You Are Not Member Of Group {0} Anymore".format(grp_name))
-
-                elif len(all_wanted_groups)>1:
-                    for i in range(len(all_wanted_groups)):
-                        print('{0}.\t{1}\t{2}\n'.format(
-                            i + 1, all_wanted_groups[i][0], '😎' if all_wanted_groups[i][1] == userid else ''))
-                    while True:
-                        self.user_ans = re.sub("\s*", "", input("Which Group Do You Want To Enter? "))
-                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(all_wanted_groups) + 1)):
-                            groupctx=all_wanted_groups[int(self.user_ans)-1][2]
-                            self.show_groupctx(groupctx,grp_name,userid)
-                            break
+            elif re.match(self.cmdrgx_obj.show_friends, self.usercmd) is not None:
+                friends=self.dbhandler.get_friends_of_user(userid)
+                if len(friends)==0:
+                    print("NO Friend To Unfollow")
                 else:
-                    groupctx = all_wanted_groups[0][2]
-                    self.show_groupctx(groupctx, grp_name,userid)
+                    for i in range(len(friends)):
+                        print("{0}. {1}".format(i+1,friends[i][0]))
+
+            elif re.match(self.cmdrgx_obj.add_friend, self.usercmd) is not None:
+
+                friend_username=input("Enter Friend Username: ")
+
+                if self.dbhandler.does_username_exist(friend_username):
+                    if self.dbhandler.create_new_friendship(userid,friend_username):
+                        print("Friendship Added Successfully")
+                    else:
+                        print("Friendship Addition Failed")
+                else:
+                    print("Username Entered Does Not Exist")
+
+            elif re.match(self.cmdrgx_obj.remove_friend, self.usercmd) is not None:
+                friends = self.dbhandler.get_friends_of_user(userid)
+                if len(friends) == 0:
+                    print("NO Friend")
+                else:
+                    for i in range(len(friends)):
+                        print("{0}. {1}".format(i + 1, friends[i][0]))
 
 
+                    while True:
+                        self.user_ans = re.sub("\s*", "", input("Which Friend Do You Want To Unfollow? "))
+                        if self.user_ans.isdigit() and (int(self.user_ans) in range(1, len(friends)+1)):
+                            friendid=friends[int(self.user_ans)-1][1]
 
+                            if self.dbhandler.remove_friendship(userid,friendid):
+                                print("Friendship With {0} Removed Successfully".format(friends[int(self.user_ans)-1][0]))
+
+                            else:
+                                print("Friendship Removal Failed")
+
+
+                            break
+
+            elif re.match(self.cmdrgx_obj.messenger, self.usercmd) is not None:
+                self.run_messanger(userid,self.usercred_obj.username)
 
 
             elif re.match(self.cmdrgx_obj.empty_cmd,self.usercmd) is not None:
